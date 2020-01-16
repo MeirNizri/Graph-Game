@@ -3,7 +3,7 @@ package dataStructure;
 import java.io.Serializable;
 
 /**
- * This interface represents the set of operations applicable on a 
+ * This class represents the set of operations applicable on a 
  * directional edge(src,dest) in a (directional) weighted graph.
  * @author Meir Nizri and Avihai Bernholtz
  */

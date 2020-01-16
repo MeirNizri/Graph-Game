@@ -5,7 +5,7 @@ import java.io.Serializable;
 import utils.Point3D;
 
 /**
- * This interface represents the set of operations applicable on a 
+ * This class represents the set of operations applicable on a 
  * node (vertex) in a (directional) positive weighted graph.
  * @author Meir Nizri, Avihai Bernholtz
  */

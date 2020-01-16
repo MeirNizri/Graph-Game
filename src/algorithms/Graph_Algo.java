@@ -160,40 +160,11 @@ public class Graph_Algo implements graph_algorithms, Serializable{
 	 */
 	@Override
 	public double shortestPathDist(int src, int dest) {
-		if(AlgoG.getNode(src)==null||AlgoG.getNode(dest)==null) {
+		if(AlgoG.getNode(src)==null || AlgoG.getNode(dest)==null) 
 			throw new IllegalArgumentException("one of the node you entered doesn't exist in this graph");
-		}
-		// Check if there is any path to src
-		ReseTags(AlgoG);
-		MarkTags(src,AlgoG);
-		if(AlgoG.getNode(dest).getTag()!=1) {
-			return -1;
-		}
-		SetToInf(AlgoG);
-		AlgoG.getNode(src).setWeight(0);
-		Collection<node_data> notVisited=new LinkedList<>(AlgoG.getV());
-		node_data minWeight;
-		while (!notVisited.isEmpty()) {
-			// Find the node with the minimum weight from all nodes in the collection.
-			minWeight = findMinNode(notVisited);
-			// Go over all the neighbors of minWeight that we didn't removed from the collection.
-			for(edge_data e : AlgoG.getE(minWeight.getKey())) {
-				node_data neighbor = AlgoG.getNode(e.getDest());
-				if(neighbor.getInfo() != "finished") {
-					double distance = minWeight.getWeight() + e.getWeight();
-					// If we find a shorter distance update the weight.
-					// And save the node who lead to this node.
-					if(distance < neighbor.getWeight()) {
-						neighbor.setWeight(distance);
-						neighbor.setTag(minWeight.getKey());
-					}
-				}
-			}
-			// Mark the node as "finished", and remove it from the collection
-			minWeight.setInfo("finished");
-			notVisited.remove(minWeight);
-		}
-		// Check if the distance is infinity, which means there is no shortest path. If so returns -1
+		// Activate Dijkstra algorithm to calculate all shortest path from src.
+		Dijkstra(AlgoG, src);
+		// Check if the distance to dest is infinity, which means there is no shortest path. If so returns -1
 		double ans = AlgoG.getNode(dest).getWeight();
 		if(ans == Double.MAX_VALUE) 
 			return -1;
@@ -214,18 +185,9 @@ public class Graph_Algo implements graph_algorithms, Serializable{
 		// Check if there is a path from src to dest, if not return null.
 		double distance = shortestPathDist(src, dest);
 		if(distance == -1) return null;
-
-		// In each node the "tag" field saves the key of the node from which we reached the current node.
-		// We will start from dest and go through all the nodes until we reach the source node.
-		List<node_data> nodePath = new LinkedList<node_data>();
-		node_data n = AlgoG.getNode(dest);
-		nodePath.add(n);
-		// Each node in the path inserted into the stack
-		while(n != AlgoG.getNode(src)) {		
-			n = AlgoG.getNode(n.getTag());
-			nodePath.add(0, n);
-		} 
-		return nodePath;
+		
+		// After we activate Dijkstre in shortestPathDist the current path is the shortest.
+		return findPath(AlgoG, src, dest);
 	}
 
 	/* 
@@ -241,17 +203,15 @@ public class Graph_Algo implements graph_algorithms, Serializable{
 	public List<node_data> TSP(List<Integer> targets) {
 		List<Integer> targetsCopy = new LinkedList<Integer>(targets);
 		List<node_data> TSP = new LinkedList<node_data>();
-		// Get the first node from targets
-		TSP.add(0,AlgoG.getNode(targetsCopy.get(0)));
-		targetsCopy.remove(0);
+		// Get and remove the first node from targets
+		TSP.add(0,AlgoG.getNode(targetsCopy.remove(0)));
 		
 		while(!targetsCopy.isEmpty()) {
-			// Activate shortestPathDist to calculate distance to all nodes
+			// Activate Dijkstra algorithm to calculate distance to all nodes
 			int src = TSP.get((TSP.size())-1).getKey();
-			int dest = targetsCopy.get(0);
-			shortestPathDist(src, dest);
+			Dijkstra(AlgoG, src);
 			// Find the node in targets the path to is the shortest
-			node_data minWeightNode = AlgoG.getNode(dest);
+			node_data minWeightNode = AlgoG.getNode(targetsCopy.get(0));
 			for(Integer i : targetsCopy) {
 				if(AlgoG.getNode(i).getWeight() < minWeightNode.getWeight())
 					minWeightNode = AlgoG.getNode(i);
@@ -295,6 +255,70 @@ public class Graph_Algo implements graph_algorithms, Serializable{
 		}
 		return g;
 	}
+	
+	/* 
+	 * calculate the shortest path between src to every other node in the graph
+	 * see: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
+	 * @param src - start node
+	 * @param Graph - the graph
+	 */
+	public static void Dijkstra(graph Graph, int src) {
+		// Check if src exist in the graph, if not throw exception.
+		if(Graph.getNode(src)==null) {
+			throw new IllegalArgumentException("The node you entered doesn't exist in this graph");
+		}
+		// Reset all the values we will use in this algorithm.
+		for(node_data n : Graph.getV()) {
+			n.setWeight(Double.MAX_VALUE);
+			n.setInfo("");
+			n.setTag(0);
+		}
+		Graph.getNode(src).setWeight(0);
+		
+		// Make collection of all nodes not visited
+		Collection<node_data> notVisited=new LinkedList<>(Graph.getV());
+		node_data minWeight;
+		while (!notVisited.isEmpty()) {
+			// Find the node with the minimum weight from all nodes in the collection.
+			minWeight = findMinNode(notVisited);
+			// Go over all the neighbors of minWeight that we didn't removed from the collection.
+			for(edge_data e : Graph.getE(minWeight.getKey())) {
+				node_data neighbor = Graph.getNode(e.getDest());
+				if(neighbor.getInfo() != "finished") {
+					double distance = minWeight.getWeight() + e.getWeight();
+					// If we find a shorter distance update the weight. And save the node who lead to this node.
+					if(distance < neighbor.getWeight()) {
+						neighbor.setWeight(distance);
+						neighbor.setTag(minWeight.getKey());
+					}
+				}
+			}
+			// Mark the node as "finished", and remove it from the collection
+			minWeight.setInfo("finished");
+			notVisited.remove(minWeight);
+		}
+	}
+	
+	/* 
+	 * returns the the current path between src to dest - as an ordered List of nodes:
+	 * src--> n1-->n2-->...dest
+	 * @param src - start node
+	 * @param dest - end (target) node
+	 * @return a List of the nodes of the path 
+	 */
+	public static List<node_data> findPath(graph Graph, int src, int dest){
+		// In each node the "tag" field saves the key of the node from which we reached the current node.
+		// We will start from dest and go through all the nodes until we reach the source node.
+		List<node_data> nodePath = new LinkedList<node_data>();
+		node_data n = Graph.getNode(dest);
+		nodePath.add(n);
+		// Each node in the path inserted into the stack
+		while(n != Graph.getNode(src)) {		
+			n = Graph.getNode(n.getTag());
+			nodePath.add(0, n);
+		} 
+		return nodePath;
+	}
 
 	/**
 	 * Resets all tags to be 0.
@@ -326,19 +350,6 @@ public class Graph_Algo implements graph_algorithms, Serializable{
 					g.getNode(itr.getDest()).setTag(1);
 				}
 			}
-		}
-	}
-
-	/**
-	 * Sets all the node's weights to be infinity,set all the info to be empty, 
-	 * and set the tags to 0.
-	 * @param g the g
-	 */
-	private static void SetToInf(graph g) {
-		for(node_data n : g.getV()) {
-			n.setWeight(Double.MAX_VALUE);
-			n.setInfo("");
-			n.setTag(0);
 		}
 	}
 
@@ -377,32 +388,4 @@ public class Graph_Algo implements graph_algorithms, Serializable{
 		}
 		return rev;
 	}
-
-//	/**
-//	 * SPT=shortest path target
-//	 * find the target with the shortest path from a source
-//	 * if even one node from targets has a weight of MAX_VALUE the function returns -1
-//	 * @param int src-the source
-//	 * @param List<Integer> targets-the targets
-//	 * @return int shortest=the key of the node with the shortest path from src
-//	 */
-//	private Integer SPT(int src,List<Integer> targets) {
-//		Iterator<Integer> itr=targets.iterator();
-//		int shortest=itr.next();
-//		double shortpath=shortestPathDist(src,shortest);
-//		shortpath=AlgoG.getNode(shortest).getWeight();
-//		int dest=0;
-//		while(itr.hasNext()) {
-//			dest=itr.next();
-//			node_data n=AlgoG.getNode(dest);
-//			if(n.getWeight()==Double.MAX_VALUE) {
-//				return -1;
-//			}
-//			if(n.getWeight()<shortpath) {
-//				shortpath=n.getWeight();
-//				shortest=n.getKey();
-//			}
-//		}
-//		return shortest;
-//	}
 }
