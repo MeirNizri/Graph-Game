@@ -7,6 +7,11 @@ import org.junit.jupiter.api.Test;
 class RobotTest {
 
 	@Test
+	void testRobot() {
+		fail("Not yet implemented");
+	}
+
+	@Test
 	void testRobotString() {
 		fail("Not yet implemented");
 	}
@@ -52,17 +57,12 @@ class RobotTest {
 	}
 
 	@Test
-	void testGetNextNode() {
-		fail("Not yet implemented");
-	}
-
-	@Test
-	void testSetNextNode() {
-		fail("Not yet implemented");
-	}
-
-	@Test
 	void testNextMove() {
+		fail("Not yet implemented");
+	}
+
+	@Test
+	void testGetNextMove() {
 		fail("Not yet implemented");
 	}
 

@@ -2,9 +2,11 @@ package gameObjects;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import dataStructure.edge_data;
-import dataStructure.graph;
-import dataStructure.node_data;
+
+import graphAlgorithms.Graph_Functions;
+import graphDataStructure.edge_data;
+import graphDataStructure.graph;
+import graphDataStructure.node_data;
 import utils.Point3D;
 
 /**
@@ -27,7 +29,6 @@ public class Fruit {
 	private double value;
 	// Boolean variable to check if this fruit already targeted by another robot.
 	private boolean isTaken;
-	private double EPSILON = 0.000000001;
 	
 	/**
 	 * Empty default constructor
@@ -46,7 +47,7 @@ public class Fruit {
 			type = fruit.getInt("type");
 			location = new Point3D(fruit.getString("pos"));
 			// find the edge the fruit locate on
-			edge = findEdge(Graph, location);
+			edge = Graph_Functions.findEdge(Graph, location, 0.000000000001);
 			// If type is -1 to collect the fruit must move from the big node to the small node.
 			if(type == -1) {
 				src = Math.max(edge.getSrc(), edge.getDest());
@@ -84,30 +85,6 @@ public class Fruit {
 	 */
 	public edge_data getEdge() {
 		return edge;
-	}
-	
-	/**
-	 * Find the edge the fruit locate on. if not fount return null.
-	 * This algorithem is based on "Triangle inequality".
-	 * See: https://en.wikipedia.org/wiki/Triangle_inequality
-	 * @param Graph - the graph on which the fruit is placed
-	 * @param p - the location of the fruit on the graph
-	 * @return the edge the fruit locate is on, or null if not found any
-	 */
-	public edge_data findEdge(graph Graph, Point3D p) {
-		// Go through all the edges until you find an edge (a,b),
-		// such that the distance from p to a plus the distance from p to b,
-		// equals the distance from a to b at  EPSILON difference.
-		// This algorithem is based on "Triangle inequality". see: https://en.wikipedia.org/wiki/Triangle_inequality
-		for(node_data n : Graph.getV()) {
-			Point3D src_p = n.getLocation();
-			for(edge_data e : Graph.getE(n.getKey())) {
-				Point3D dest_p = Graph.getNode(e.getDest()).getLocation();
-				if((p.distance2D(src_p) + p.distance2D(dest_p)) - src_p.distance2D(dest_p) < EPSILON)
-					return e;
-			}
-		}
-		return null;
 	}
 	
 	/**

@@ -37,11 +37,6 @@ class GameManagerTest {
 	}
 
 	@Test
-	void testNextMove() {
-		fail("Not yet implemented");
-	}
-
-	@Test
 	void testUpdateFruits() {
 		fail("Not yet implemented");
 	}
@@ -53,6 +48,11 @@ class GameManagerTest {
 
 	@Test
 	void testUpdateRobotPath() {
+		fail("Not yet implemented");
+	}
+
+	@Test
+	void testNextMove() {
 		fail("Not yet implemented");
 	}
 

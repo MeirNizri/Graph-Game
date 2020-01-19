@@ -10,9 +10,9 @@ import org.json.JSONObject;
 
 import Server.Game_Server;
 import Server.game_service;
-import algorithms.Graph_Algo;
-import dataStructure.DGraph;
-import dataStructure.node_data;
+import graphAlgorithms.Graph_Algo;
+import graphDataStructure.DGraph;
+import graphDataStructure.node_data;
 
 /**
  * This class represents a game management system. 
@@ -26,9 +26,9 @@ public class GameManager {
 	// The game server operate the game.
 	private game_service game;
 	// The fruits and robots on the game.
-	private int numRobots;
 	private ArrayList<Fruit> Fruits = new ArrayList<Fruit>();
 	private ArrayList<Robot> Robots = new ArrayList<Robot>();
+	private int numRobots;
 	// The graph on which the fruits and robots are placed.
 	private DGraph Graph;
 	
@@ -108,39 +108,15 @@ public class GameManager {
 		List<String> Fruits_Json = game.getFruits();
 		for(int i=0; i<Fruits_Json.size(); i++) {
 			// If fruit has changed return true
-			if(!Fruits.get(i).equals(new Fruit(Graph, Fruits_Json.get(i)))) {
+			if(!Fruits.get(i).equals(new Fruit(Graph, Fruits_Json.get(i)))) 
 				return true;
-			}
 		}
 		return false;
-	}
-	
-	/**
-	 * Updates the location of the robots, and calculates for 
-	 * each robot its next step if it reaches the dest node.
-	 */
-	public void nextMove() {
-		List<String> Robots_Json = game.getRobots();	
-		for(int i=0; i<Robots_Json.size(); i++) {
-			try { // Checks if the robot has reached its dest node (equale -1). if true set is next move
-				JSONObject robot_Jobj = new JSONObject(Robots_Json.get(i)).getJSONObject("Robot");
-				if(robot_Jobj.getInt("dest") == -1) {	
-					// Updates the location of the robots, and check if the robots path is not empty.
-					Robots.get(i).update(Robots_Json.get(i));
-					if(Robots.get(i).getPath().isEmpty()) 
-						updateRobotPath(i);
-					// Set next move for robot.
-					game.chooseNextEdge(Robots.get(i).getId(), Robots.get(i).nextMove());
-				}
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-		}	
 	}
 
 	/**
 	 * Updating the fruits on the game. 
-	 * This function will be activated when one of the fruits is collected.
+	 * This function will be activated after one of the fruits is collected.
 	 */
 	public void updateFruits() {
 		List<String> Fruits_Json = game.getFruits();
@@ -154,8 +130,9 @@ public class GameManager {
 	 */
 	public void updateAllRobotsPath() {
 		List<String> Robots_Json = game.getRobots();
-		for(int i=0; i<Robots_Json.size(); i++)
+		for(int i=0; i<Robots_Json.size(); i++) {
 			updateRobotPath(i);
+		}
 	}
 	
 	/**
@@ -200,6 +177,29 @@ public class GameManager {
 		pathToFruit.add(Graph.getNode(profitableFruit.getDest()));
 		robot.setPath(pathToFruit);
 		profitableFruit.setIsTaken(true);
+	}
+	
+	/**
+	 * Updates the location of the robots, and calculates for 
+	 * each robot its next step if it reaches the dest node.
+	 */
+	public void nextMove() {
+		List<String> Robots_Json = game.getRobots();	
+		for(int i=0; i<Robots_Json.size(); i++) {
+			try { // Checks if the robot has reached its dest node (equale -1). if true set is next move
+				JSONObject robot_Jobj = new JSONObject(Robots_Json.get(i)).getJSONObject("Robot");
+				if(robot_Jobj.getInt("dest") == -1) {	
+					// Updates the location of the robots, and check if the robots path is not empty.
+					Robots.get(i).update(Robots_Json.get(i));
+					if(Robots.get(i).getPath().isEmpty()) 
+						updateRobotPath(i);
+					// Set next move for robot.
+					game.chooseNextEdge(Robots.get(i).getId(), Robots.get(i).nextMove());
+				}
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+		}	
 	}
 
 	/**

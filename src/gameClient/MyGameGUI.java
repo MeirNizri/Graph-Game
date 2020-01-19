@@ -1,10 +1,13 @@
 package gameClient;
 
 import java.awt.Color;
+import java.awt.FileDialog;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
 import java.text.DecimalFormat;
 import java.util.List;
 
@@ -12,15 +15,17 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.KeyStroke;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import Server.Game_Server;
 import Server.game_service;
-import dataStructure.*;
 import gameObjects.*;
+import graphAlgorithms.*;
+import graphDataStructure.*;
 import utils.*;
-import algorithms.*;
 
 /**
  * This class represents a graphical interface of a game. In this game there is a server,
@@ -28,17 +33,25 @@ import algorithms.*;
  * Each scenario has a graph, time, fruits, and robots.
  * The purpose of the robots is to obtain as much points as possible. points are obtained by collecting fruits.
  * 
- * Each fruit has a location and value. After the fruit is collected the number of points is obtained,
+ * Each fruit has a location and value. After the fruit is collected and the number of points is obtained,
  * the fruit appears elsewhere on the graph. There are two types of fruit:
  * Banana - must be collected at the crossing on the edge from the high node to the low node.
  * Apple - must be collected at the crossing on the edge from the low node to the high node.
  * 
  * There are two ways to run the game:
- * Manual - where the user places the fruits on the graph, and After that the game begins. 
- * During the game the user chooses each robot where to go.
+ * Manual - where first the user places the fruits on the graph, and After that the game begins. 
+ * During the game the user chooses each robot where to go, by clicking on a node that is neighbor to the current node the robot is on.
  * Automatic - where the user only runs the game and the robots collect the fruit relatively optimally,
  * according to the algorithm in the GameManager class.
  * 
+ * In the GUI, while the game is running you can see at any time: the number of the scenario currently being played, 
+ * the number of moves, and the number of points collected up to the present time. At the end of the game, a message 
+ * will be displayed showing the total number of points the robots have collected
+ * 
+ * In addition, the game can be saved as a KML file that can be run on Google Earth. 
+ * There you can see the paths the robots have taken during the game The location of the path in Google Earth is 
+ * according to the location of the fruits and the graph, which are in the area of Ariel city.
+ *  
  * @author Meir Nizri
  */
 public class MyGameGUI implements ActionListener, MouseListener {
@@ -55,7 +68,9 @@ public class MyGameGUI implements ActionListener, MouseListener {
 	// Radius of circle to draw node. We will use this variable to draw more details in the GUI.
 	private double radius;
 	// Flags indicating in which method the game is running: Manual or automatic.
-	private boolean manualActivated = false, automaticActivated = false;
+	private boolean manualActivated = false;
+	// String that will used to save game to kml file.
+	private String kmlStr = "";
 
 	/**
 	 * Instantiates a new game GUI.
@@ -74,137 +89,80 @@ public class MyGameGUI implements ActionListener, MouseListener {
 		StdDraw.addMouseListener(this);
 		StdDraw.enableDoubleBuffering();
 	}
-
-	/**
-	 * Initialize the game. It asks the user for a proper scenario number.
-	 * Then, gets from the game server all information about this scenario.
-	 * And finally, draws the graph and the fruits on it.
-	 */
-	public void initGame() {
-		// Ask the user number of scenario.
-		String scenario_str = JOptionPane.showInputDialog(StdDraw.frame,"Enter scenario 0-23 to play");
-		// If can't parse the string entered to int, or the nuber is not between 0-23, inform the user.
-		try {
-			scenario_num = Integer.parseInt(scenario_str);
-		} catch (Exception e1){
-			JOptionPane.showMessageDialog(StdDraw.frame, "The scenario must be between 0-23", "Error", JOptionPane.PLAIN_MESSAGE);
-			return;
-		}
-		if (scenario_num>23 || scenario_num<0) {
-			JOptionPane.showMessageDialog(StdDraw.frame, "The scenario must be between 0-23", "Error", JOptionPane.PLAIN_MESSAGE);
-			return;
-		}
-		
-		// Gets all information on the game scenario the user chosed.
-		game = Game_Server.getServer(scenario_num);
-		if(game.isRunning()) game.stopGame();
-		try {
-			JSONObject gameServer = new JSONObject(game.toString()).getJSONObject("GameServer");
-			numRobots = gameServer.getInt("robots");
-			Robots = new Robot[numRobots];
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		
-		// Draw the graph and the fruit on it.
-		initGraph(game.getGraph());
-		drawFruits(game.getFruits());	
-		drawGraph();	
-		StdDraw.show();
-	}	
-	
-	/**
-	 * Adds robot in the selected node and draw it on GUI.
-	 * @param pressed - the node to locate the robot on.
-	 */
-	public void addRobot(node_data pressed) {
-		// Add robot and draw it on GUI.
-		game.addRobot(pressed.getKey());
-		drawRobots(game.getRobots());
-		StdDraw.show();
-		robotsOnGraph++;
-		// If after adding the robot, the number of robots in the graph is equal 
-		// to the number of robots defined in the game - start the game.
-		if(robotsOnGraph == numRobots) {
-			game.startGame();
-			GameMove move = new GameMove(game);
-			Thread t1 = new Thread(move);
-			GameDraw draw = new GameDraw(game, this);
-			Thread t2 = new Thread(draw);
-			t1.start();
-			t2.start();
-		}	
-	}
-
-	/**
-	 * Updates the game GUI while the game is running. 
-	 * Draws the graph, fruits, robots and time left for the game.
-	 * @param game - the game.
-	 */
-	public void updateGame(game_service game) {
-		StdDraw.clear();
-		drawFruits(game.getFruits());
-		drawGraph();
-		drawRobots(game.getRobots());
-		drawInfo(game.timeToEnd());
-		StdDraw.show();
-	}
-	
-	/**
-	 * When the game is over, notifies the user of his final result.
-	 * @param game the game
-	 */
-	public void gameOver(game_service game) {
-		try {
-			// Extract result from the game information.
-			JSONObject gameServer = new JSONObject(game.toString()).getJSONObject("GameServer");
-			int result = gameServer.getInt("grade");
-			// Notifies the user of his final result.
-			JOptionPane.showMessageDialog(StdDraw.frame, "Your total score is: " + result,
-					"Game Over", JOptionPane.PLAIN_MESSAGE);
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-	}
 	
 	/**
 	 * This function identifies when an action performed.
 	 * We will use this function to identify when the user clicked an option from the menu bar.
+	 * the menu bar options are:
+	 * Manual game - play the game manualy.
+	 * Automatic game - play the game Automaticly.
+	 * Save to KML - save the last game played as kml file.
+	 * save as image - save the current draw as .jpg or .png file.
 	 * @param e - The object that is sent when an action performed
 	 */
 	@Override
-	public void actionPerformed(ActionEvent e) {
-		// Cancel any play options and reset the GUI.
-		manualActivated = false;
-		automaticActivated = false;
-		robotsOnGraph = 0;
-		StdDraw.clear();
-		StdDraw.show();
+	public void actionPerformed(ActionEvent e) {		
 		String ActivatedItem = e.getActionCommand();
 		
+		// Manual game option.
 		if(ActivatedItem.equals("Manual")) {
-			// Initialize game, and notify the user that he has to place robots on the graph.
+			// Initialize game, and notify the user that he need to place robots on the graph.
 			initGame();
 			JOptionPane.showMessageDialog(StdDraw.frame, "Select " + numRobots + " nodes to place the robots.\n"
 						+ "After that the game will start immediatly", "Manual Game", JOptionPane.PLAIN_MESSAGE);
 			manualActivated = true;	
 		}
 		
+		// Automatic game option.
 		if(ActivatedItem.equals("Automatic")) {
 			// Initialize game.
 			initGame();
-			automaticActivated = true;
 			GameManager manager = new GameManager(game);;
-			// Create thread that operate "move" on the game, and manage the game. 
-			GameMove move = new GameMove(game, manager, automaticActivated);
+			// Create thread that operate "move" and manage the game. 
+			GameMoveThread move = new GameMoveThread(this, game, manager);
 			Thread t1 = new Thread(move);
-			// Create thread that draw the game
-			GameDraw draw = new GameDraw(game, this);
+			// Create thread that draw the game.
+			GameDrawThread draw = new GameDrawThread(this, game);
 			Thread t2 = new Thread(draw);
-			// Start game and threads
+			// Start game and threads.
 			manager.startGame();
 			t1.start();
 			t2.start();
+		}
+		
+		// Save game as KML file.
+		if(ActivatedItem.equals("Save Last Game As KML")) {
+			// if kml is empty it means that no game is played. inform that to the user.
+			if(kmlStr.isEmpty()) {
+				JOptionPane.showMessageDialog(StdDraw.frame, "You must play a game first", 
+						"ERROR", JOptionPane.PLAIN_MESSAGE);
+				return;
+			}
+			
+			// Allows the user to decide where to save the kml file. The file extension must be '.kml'.
+			FileDialog chooser = new FileDialog(StdDraw.frame, "Use a .kml extension", FileDialog.SAVE);
+			chooser.setVisible(true);
+			String filename = chooser.getFile();
+			if(filename != null) {
+				String path = chooser.getDirectory() + File.separator + chooser.getFile();
+				try {
+					KML_Logger.createKMLFile(kmlStr, path);
+				} catch (Exception e1) {
+					JOptionPane.showMessageDialog(StdDraw.frame, "The file must be with '.kml' suffix", 
+							"ERROR", JOptionPane.PLAIN_MESSAGE);				
+				}
+			}
+		}
+		
+		// Save the draw to png or jpg file option.
+		// The user can choose file to overwrite or make new file in the directory he chooses.
+		if(ActivatedItem.equals("Save To Image")) {
+			FileDialog chooser = new FileDialog(StdDraw.frame, "Use a .png or .jpg extension", FileDialog.SAVE);
+			chooser.setVisible(true);
+			String filename = chooser.getFile();
+			if (filename != null) {
+				StdDraw.save(chooser.getDirectory() + File.separator + chooser.getFile());
+			}
 		}
 	}
 
@@ -227,11 +185,11 @@ public class MyGameGUI implements ActionListener, MouseListener {
 				// defined in the game, add robot in the selected node and draw it on GUI.
 				if(robotsOnGraph < numRobots)
 					addRobot(pressed);
-
+				
 				else { // The game has already started
-					// If the robot has reached a node and this node is also a neighbor of the pressed node,
-					// advance that robot toward the pressed node.
 					for(int i=0; i<robotsOnGraph; i++) {
+						// If the robot has reached a node and this node is also a neighbor of the pressed node,
+						// advance that robot toward the pressed node.
 						if(Robots[i].getDest()==-1 && Graph.getEdge(Robots[i].getSrc(), pressed.getKey())!=null) {
 							game.chooseNextEdge(Robots[i].getId(), pressed.getKey());
 							break;
@@ -257,6 +215,8 @@ public class MyGameGUI implements ActionListener, MouseListener {
 	 * During the game the user chooses each robot where to go.
 	 * Automatic - where the user only runs the game and the robots collect the fruit relatively optimally,
 	 * according to the algorithm in the GameManager class.
+	 * Save to KML - save the last game played as KML file.
+	 * save as image - save the current draw as .jpg or .png file.
 	 * @return JMenuBar Object to enter the JFrame
 	 */
 	private JMenuBar createMenuBar() {
@@ -271,9 +231,68 @@ public class MyGameGUI implements ActionListener, MouseListener {
 		JMenuItem Automatic = new JMenuItem("Automatic");
 		Automatic.addActionListener(this);
 		startGame.add(Automatic);
+		
+		// Creates all the saving options
+		JMenu SaveAs = new JMenu("Save As..");
+		menuBar.add(SaveAs);
+		JMenuItem kml = new JMenuItem("Save Last Game As KML");
+		kml.addActionListener(this);
+		kml.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_K,
+			    KeyEvent.VK_SHIFT | KeyEvent.VK_CONTROL));
+		SaveAs.add(kml);
+		JMenuItem SaveToImage = new JMenuItem("Save To Image");
+		SaveToImage.addActionListener(this);
+		SaveToImage.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
+			    KeyEvent.VK_SHIFT | KeyEvent.VK_CONTROL));
+		SaveAs.add(SaveToImage);
 
 		return menuBar;
 	}
+	
+	/**
+	 * Initialize the game. It asks the user for a proper scenario number.
+	 * Then, gets from the game server all information about this scenario.
+	 * And finally, draws the graph and the fruits on it.
+	 */
+	public void initGame() {
+		// Reset the GUI.
+		StdDraw.clear();
+		StdDraw.show();
+		// Cancel any play options.
+		manualActivated = false;
+		robotsOnGraph = 0;
+		
+		// Ask the user number of scenario.
+		String scenario_str = JOptionPane.showInputDialog(StdDraw.frame,"Enter scenario 0-23 to play");
+		// If can't parse the string entered to int, or the nuber is not between 0-23, inform the user.
+		try {
+			scenario_num = Integer.parseInt(scenario_str);
+		} catch (Exception e1){
+			JOptionPane.showMessageDialog(StdDraw.frame, "The scenario must be between 0-23", "Error", JOptionPane.PLAIN_MESSAGE);
+			return;
+		}
+		if (scenario_num>23 || scenario_num<-1) {
+			JOptionPane.showMessageDialog(StdDraw.frame, "The scenario must be between 0-23", "Error", JOptionPane.PLAIN_MESSAGE);
+			return;
+		}
+		
+		// Gets all information on the game scenario the user chosed.
+		game = Game_Server.getServer(scenario_num);
+		if(game.isRunning()) game.stopGame();
+		try {
+			JSONObject gameServer = new JSONObject(game.toString()).getJSONObject("GameServer");
+			numRobots = gameServer.getInt("robots");
+			Robots = new Robot[numRobots];
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		
+		// Draw the graph and the fruit on it.
+		initGraph(game.getGraph());
+		drawFruits(game.getFruits());	
+		drawGraph();	
+		StdDraw.show();
+	}	
 	
 	/**
 	 * Initializes all the details needed to draw the graph.
@@ -293,6 +312,54 @@ public class MyGameGUI implements ActionListener, MouseListener {
 		StdDraw.setYscale(ry.get_min()-Yfringe, ry.get_max()+Yfringe);
 		// Radius of circle to draw node. We will use this variable to draw more details in the GUI.
 		radius = rx.get_length()/250;		
+	}
+	
+	/**
+	 * Adds robot in the selected node and draw it on GUI.
+	 * @param pressed - the node to locate the robot on.
+	 */
+	public void addRobot(node_data pressed) {
+		// Add robot and draw it on GUI.
+		game.addRobot(pressed.getKey());
+		drawRobots(game.getRobots());
+		StdDraw.show();
+		robotsOnGraph++;
+		// If after adding the robot, the number of robots in the graph is equal 
+		// to the number of robots defined in the game - start the game.
+		if(robotsOnGraph == numRobots) {
+			// Create thread that operate "move" on the game every tenth of a second.
+			GameMoveThread move = new GameMoveThread(this, game);
+			Thread t1 = new Thread(move);
+			// Create thread that draw the game every tenth of a second.
+			GameDrawThread draw = new GameDrawThread(this, game);
+			Thread t2 = new Thread(draw);
+			// Start game and threads
+			game.startGame();
+			t1.start();
+			t2.start();
+		}	
+	}
+
+	/**
+	 * Updates the game GUI while the game is running. 
+	 * Draws the graph, fruits, robots and more info about the game.
+	 * @param game - the game.
+	 */
+	public void updateGame(game_service game) {
+		StdDraw.clear();
+		drawFruits(game.getFruits());
+		drawGraph();
+		drawRobots(game.getRobots());
+		drawInfo(game.timeToEnd());
+		StdDraw.show();
+	}
+	
+	/**
+	 * Updates the kml string.
+	 * @param kmlStr - the kml String.
+	 */
+	public void updateKML(String kmlStr) {
+		this.kmlStr = kmlStr;
 	}
 	
 	/**
@@ -356,7 +423,7 @@ public class MyGameGUI implements ActionListener, MouseListener {
 	}
 	
 	/**
-	 * Draw the time left for the game and, current result, current number of moves, and the scenario number.
+	 * Draw: the time left for the game, current result, current number of moves, and the scenario number.
 	 * @param t - the time left for the game in miliSeconds. if the game not started t=-1.
 	 */
 	public void drawInfo(long t) {
@@ -370,7 +437,7 @@ public class MyGameGUI implements ActionListener, MouseListener {
 		}
 		// Draw the time.
 		time = String.format("%2d:%02d:%02d", minute, second, miliSecond);
-        StdDraw.setPenColor(StdDraw.GRAY);
+        StdDraw.setPenColor(StdDraw.BLACK);
         StdDraw.text(rx.get_max() - rx.get_length()/7, ry.get_max() - ry.get_length()/9, "Time:" + time);
         
         try {
@@ -386,5 +453,22 @@ public class MyGameGUI implements ActionListener, MouseListener {
         } catch (JSONException e) {
         	e.printStackTrace();
         }
+	}
+	
+	/**
+	 * When the game is over, notifies the user of his final result.
+	 * @param game the game
+	 */
+	public void gameOver(game_service game) {
+		try {
+			// Extract result from the game information.
+			JSONObject gameServer = new JSONObject(game.toString()).getJSONObject("GameServer");
+			int result = gameServer.getInt("grade");
+			// Notifies the user of his final result.
+			JOptionPane.showMessageDialog(StdDraw.frame, "Your total score is: " + result,
+					"Game Over", JOptionPane.PLAIN_MESSAGE);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
 	}
 }

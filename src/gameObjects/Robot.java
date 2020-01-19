@@ -3,7 +3,8 @@ package gameObjects;
 import java.util.LinkedList;
 import org.json.JSONException;
 import org.json.JSONObject;
-import dataStructure.node_data;
+
+import graphDataStructure.node_data;
 import utils.Point3D;
 
 /**

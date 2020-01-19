@@ -5,11 +5,12 @@ import java.util.Collection;
 import java.util.LinkedList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import dataStructure.DGraph;
-import dataStructure.edge;
-import dataStructure.edge_data;
-import dataStructure.node;
-import dataStructure.node_data;
+
+import graphDataStructure.DGraph;
+import graphDataStructure.edge;
+import graphDataStructure.edge_data;
+import graphDataStructure.node;
+import graphDataStructure.node_data;
 
 class DGraphTest {
 	Collection<node_data> nodes = new LinkedList<node_data>();

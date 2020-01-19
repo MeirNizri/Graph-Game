@@ -12,8 +12,9 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import algorithms.Graph_Algo;
-import dataStructure.*;
+
+import graphAlgorithms.Graph_Algo;
+import graphDataStructure.*;
 import utils.Point3D;
 
 class Graph_AlgoTest {

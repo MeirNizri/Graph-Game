@@ -1,6 +1,6 @@
-algorithms
-dataStructure
 gameClient
 gameObjects
+graphAlgorithms
+graphDataStructure
 Tests
 utils

@@ -73,6 +73,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 
 /**
@@ -1655,7 +1656,8 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 		}
 
 		else {
-			System.out.println("Invalid image file type: " + suffix);
+			JOptionPane.showMessageDialog(StdDraw.frame, "The file must be with '.png' or '.jpg' suffix", 
+					"ERROR", JOptionPane.PLAIN_MESSAGE);		
 		}
 	}
 

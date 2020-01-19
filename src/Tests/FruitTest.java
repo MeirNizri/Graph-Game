@@ -7,6 +7,11 @@ import org.junit.jupiter.api.Test;
 class FruitTest {
 
 	@Test
+	void testFruit() {
+		fail("Not yet implemented");
+	}
+
+	@Test
 	void testFruitGraphString() {
 		fail("Not yet implemented");
 	}
@@ -23,11 +28,6 @@ class FruitTest {
 
 	@Test
 	void testGetEdge() {
-		fail("Not yet implemented");
-	}
-
-	@Test
-	void testFindEdge() {
 		fail("Not yet implemented");
 	}
 
