@@ -107,7 +107,7 @@ public class MyGameGUI implements ActionListener, MouseListener {
 		// Manual game option.
 		if(ActivatedItem.equals("Manual")) {
 			// Initialize game, and notify the user that he need to place robots on the graph.
-			initGame();
+			if(!initGame()) return;
 			JOptionPane.showMessageDialog(StdDraw.frame, "Select " + numRobots + " nodes to place the robots.\n"
 						+ "After that the game will start immediatly", "Manual Game", JOptionPane.PLAIN_MESSAGE);
 			manualActivated = true;	
@@ -116,7 +116,7 @@ public class MyGameGUI implements ActionListener, MouseListener {
 		// Automatic game option.
 		if(ActivatedItem.equals("Automatic")) {
 			// Initialize game.
-			initGame();
+			if(!initGame()) return;
 			GameManager manager = new GameManager(game);;
 			// Create thread that operate "move" and manage the game. 
 			GameMoveThread move = new GameMoveThread(this, game, manager);
@@ -134,7 +134,7 @@ public class MyGameGUI implements ActionListener, MouseListener {
 		if(ActivatedItem.equals("Save Last Game As KML")) {
 			// if kml is empty it means that no game is played. inform that to the user.
 			if(kmlStr.isEmpty()) {
-				JOptionPane.showMessageDialog(StdDraw.frame, "You must play a game first", 
+				JOptionPane.showMessageDialog(StdDraw.frame, "You must play a game first or wait until the game over", 
 						"ERROR", JOptionPane.PLAIN_MESSAGE);
 				return;
 			}
@@ -253,8 +253,9 @@ public class MyGameGUI implements ActionListener, MouseListener {
 	 * Initialize the game. It asks the user for a proper scenario number.
 	 * Then, gets from the game server all information about this scenario.
 	 * And finally, draws the graph and the fruits on it.
+	 * @return false if scenario was wrong, otherwise true.
 	 */
-	public void initGame() {
+	public boolean initGame() {
 		// Reset the GUI.
 		StdDraw.clear();
 		StdDraw.show();
@@ -264,16 +265,16 @@ public class MyGameGUI implements ActionListener, MouseListener {
 		
 		// Ask the user number of scenario.
 		String scenario_str = JOptionPane.showInputDialog(StdDraw.frame,"Enter scenario 0-23 to play");
-		// If can't parse the string entered to int, or the nuber is not between 0-23, inform the user.
+		// If can't parse the string to int or the nuber is not between 0-23, inform the user.
 		try {
 			scenario_num = Integer.parseInt(scenario_str);
 		} catch (Exception e1){
 			JOptionPane.showMessageDialog(StdDraw.frame, "The scenario must be between 0-23", "Error", JOptionPane.PLAIN_MESSAGE);
-			return;
+			return false;
 		}
 		if (scenario_num>23 || scenario_num<-1) {
 			JOptionPane.showMessageDialog(StdDraw.frame, "The scenario must be between 0-23", "Error", JOptionPane.PLAIN_MESSAGE);
-			return;
+			return false;
 		}
 		
 		// Gets all information on the game scenario the user chosed.
@@ -292,6 +293,9 @@ public class MyGameGUI implements ActionListener, MouseListener {
 		drawFruits(game.getFruits());	
 		drawGraph();	
 		StdDraw.show();
+		
+		// Init GUI finishd succesfully.
+		return true;
 	}	
 	
 	/**

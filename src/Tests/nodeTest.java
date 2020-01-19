@@ -11,7 +11,7 @@ class nodeTest {
 	@Test
 	void testNode() {
 		node n = new node();
-		assertEquals(n.getKey(), 1);
+		assertEquals(n.getKey(), 0);
 		assertEquals(n.getWeight(), 0);
 		assertEquals(n.getLocation(), null);
 		assertEquals(n.getTag(), 0);

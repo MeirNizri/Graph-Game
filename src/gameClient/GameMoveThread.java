@@ -70,7 +70,7 @@ public class GameMoveThread implements Runnable{
 			kmlStr += KML_Logger.gameToKML(game);
 			// Wait 80 milliseconds.
 			try {
-				Thread.sleep(90);
+				Thread.sleep(100);
 			} catch (InterruptedException e) {}			
 		}
 		// Write the graph and the closing to kml file, and send it back to the GUI.

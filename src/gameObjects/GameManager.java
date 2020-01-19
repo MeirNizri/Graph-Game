@@ -219,4 +219,28 @@ public class GameManager {
 		System.out.println("the final score is: " + result);
 		return result;
 	}
+	
+	/**
+	 * Gets the game currently load at the gameManager.
+	 * @return the game currently load at the gameManager
+	 */
+	public game_service getGame() {
+		return game;
+	}
+	
+	/**
+	 * Gets the fruits currently on game.
+	 * @return the fruits currently on game.
+	 */
+	public ArrayList<Fruit> getFruits() {
+		return Fruits;
+	}
+	
+	/**
+	 * Gets the robots currently on game.
+	 * @return the robots currently on game.
+	 */
+	public ArrayList<Robot> getRobots() {
+		return Robots;
+	}
 }
