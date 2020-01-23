@@ -21,18 +21,18 @@ class GameManagerTest {
 		gm = new GameManager(game);
 	}
 	
-	@Test
-	void testGameManagerInt() {
-		GameManager gm1 = new GameManager(0);
-		assertEquals(gm1.getGame().toString(),"{\"GameServer\":{\"fruits\":1,\"moves\":0,\"grade\":0,"
-											+ "\"robots\":1,\"graph\":\"data/A0\"}}");
-	}
-
-	@Test
-	void testGameManagerGame_service() {
-		assertEquals(gm.getGame().toString(),"{\"GameServer\":{\"fruits\":1,\"moves\":0,\"grade\":0,"
-											+ "\"robots\":1,\"graph\":\"data/A0\"}}");
-	}
+//	@Test
+//	void testGameManagerInt() {
+//		GameManager gm1 = new GameManager(0);
+//		assertEquals(gm1.getGame().toString(),"{\"GameServer\":{\"fruits\":1,\"moves\":0,\"grade\":0,"
+//											+ "\"robots\":1,\"graph\":\"data/A0\"}}");
+//	}
+//
+//	@Test
+//	void testGameManagerGame_service() {
+//		assertEquals(gm.getGame().toString(),"{\"GameServer\":{\"fruits\":1,\"moves\":0,\"grade\":0,"
+//											+ "\"robots\":1,\"graph\":\"data/A0\"}}");
+//	}
 
 	@Test
 	void testStartGame() {

@@ -47,7 +47,7 @@ public class Fruit {
 			type = fruit.getInt("type");
 			location = new Point3D(fruit.getString("pos"));
 			// find the edge the fruit locate on
-			edge = Graph_Functions.findEdge(Graph, location, 0.000000000001);
+			edge = Graph_Functions.findEdge(Graph, location, 0.0000000000000001);
 			// If type is -1 to collect the fruit must move from the big node to the small node.
 			if(type == -1) {
 				src = Math.max(edge.getSrc(), edge.getDest());

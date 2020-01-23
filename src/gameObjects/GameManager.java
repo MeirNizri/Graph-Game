@@ -191,8 +191,9 @@ public class GameManager {
 				if(robot_Jobj.getInt("dest") == -1) {	
 					// Updates the location of the robots, and check if the robots path is not empty.
 					Robots.get(i).update(Robots_Json.get(i));
-					if(Robots.get(i).getPath().isEmpty()) 
+					if(Robots.get(i).getPath().isEmpty()) {
 						updateRobotPath(i);
+					}
 					// Set next move for robot.
 					game.chooseNextEdge(Robots.get(i).getId(), Robots.get(i).nextMove());
 				}

@@ -15,11 +15,14 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import GameDB.DataBase;
+import GameDB.PlayerInfo;
 import Server.Game_Server;
 import Server.game_service;
 import gameObjects.*;
@@ -51,6 +54,15 @@ import utils.*;
  * In addition, the game can be saved as a KML file that can be run on Google Earth. 
  * There you can see the paths the robots have taken during the game The location of the path in Google Earth is 
  * according to the location of the fruits and the graph, which are in the area of Ariel city.
+ * 
+ * Another option in the GUI is to connect to a database and play the game by level. 
+ * There are 11 defined level out of 24, which you must pass with certain result and with a certain number of moves. 
+ * Once a stage is passed, the following scenarios can be played. 
+ * In this mode all the data about the game is saved in the database.
+ * 
+ * You can also access the database and retrieve data about the user or other players. 
+ * Data such as: number of games played by the user, what the current level reached, 
+ * what is his highest score at each level, and what is his position relative to all players at each level.
  *  
  * @author Meir Nizri
  */
@@ -98,6 +110,8 @@ public class MyGameGUI implements ActionListener, MouseListener {
 	 * Automatic game - play the game Automaticly.
 	 * Save to KML - save the last game played as kml file.
 	 * save as image - save the current draw as .jpg or .png file.
+	 * Information - Show all the user information: number of games, current level, and best result at any level.
+	 * Position - Show to the user his position in the stage he selected.
 	 * @param e - The object that is sent when an action performed
 	 */
 	@Override
@@ -119,11 +133,9 @@ public class MyGameGUI implements ActionListener, MouseListener {
 			if(!initGame()) return;
 			GameManager manager = new GameManager(game);;
 			// Create thread that operate "move" and manage the game. 
-			GameMoveThread move = new GameMoveThread(this, game, manager);
-			Thread t1 = new Thread(move);
+			Thread t1 = new Thread(new GameMoveThread(this, game, manager));
 			// Create thread that draw the game.
-			GameDrawThread draw = new GameDrawThread(this, game);
-			Thread t2 = new Thread(draw);
+			Thread t2 = new Thread(new GameDrawThread(this, game));
 			// Start game and threads.
 			manager.startGame();
 			t1.start();
@@ -162,6 +174,60 @@ public class MyGameGUI implements ActionListener, MouseListener {
 			String filename = chooser.getFile();
 			if (filename != null) {
 				StdDraw.save(chooser.getDirectory() + File.separator + chooser.getFile());
+			}
+		}
+		
+		// Show all the user information: number of games, current level, and best result at any level.
+		if(ActivatedItem.equals("Information")) {
+			// Ask the user for id number.
+			String id_str = JOptionPane.showInputDialog(StdDraw.frame,"Enter ID");
+			int id = 0;
+			String info = "";
+			try {
+				id = Integer.parseInt(id_str);
+				PlayerInfo player = new PlayerInfo();
+				// Gets the player of the id selected
+				player = DataBase.getPlayerInfo(id);
+				// Buile string contain's all users information.
+				info = "Current stage: " + player.getCurrentLevel() +"\n"
+							+ "Number of games: " + player.getNumGames() +"\n";
+				for(int i=0; i<player.getNumGames(); i++) {
+					info += "Level " + i + ": " + player.getBestScore(i) +"\n";
+				}		
+				// Print to user all the information
+				JOptionPane.showMessageDialog(StdDraw.frame, info, "Information", JOptionPane.PLAIN_MESSAGE);
+			// If catch exception inform user.	
+			} catch (Exception e1){
+				JOptionPane.showMessageDialog(StdDraw.frame, "Error! please try again with valid input", 
+						"Error", JOptionPane.PLAIN_MESSAGE);
+			}
+		}
+		
+		// Show to the user his position in the stage he selected.
+		if(ActivatedItem.equals("Position")) {
+			// Ask the user to insert ID and stage.
+			String id_str = "", stage_str = "";
+			JTextField input1 = new JTextField();
+			JTextField input2 = new JTextField();
+			Object[] message = {"Enter your ID:", input1, "Enter stage to check:", input2};
+			int option = JOptionPane.showConfirmDialog(StdDraw.frame, message, "Check Position", JOptionPane.OK_CANCEL_OPTION);
+			if (option == JOptionPane.OK_OPTION) {
+			    id_str = input1.getText();
+			    stage_str = input2.getText();
+			}
+
+			try {
+				// Gets the user position
+				int id = Integer.parseInt(id_str);
+				int stage = Integer.parseInt(stage_str);
+				int position = DataBase.compare(id, stage);
+				// Prints the position
+				JOptionPane.showMessageDialog(StdDraw.frame, "in stage: " + stage + " your position is: " + position,
+											"Position", JOptionPane.PLAIN_MESSAGE);
+			// If catch exception inform user.	
+			} catch (Exception e1){
+				JOptionPane.showMessageDialog(StdDraw.frame, "Error! please try again with valid input", 
+											"Error", JOptionPane.PLAIN_MESSAGE);
 			}
 		}
 	}
@@ -245,6 +311,16 @@ public class MyGameGUI implements ActionListener, MouseListener {
 		SaveToImage.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
 			    KeyEvent.VK_SHIFT | KeyEvent.VK_CONTROL));
 		SaveAs.add(SaveToImage);
+		
+		// Creates all the Data Base options
+		JMenu CheckState = new JMenu("Check Your State");
+		menuBar.add(CheckState);
+		JMenuItem Info = new JMenuItem("Information");
+		Info.addActionListener(this);
+		CheckState.add(Info);
+		JMenuItem Position = new JMenuItem("Position");
+		Position.addActionListener(this);
+		CheckState.add(Position);
 
 		return menuBar;
 	}
@@ -278,6 +354,7 @@ public class MyGameGUI implements ActionListener, MouseListener {
 		}
 		
 		// Gets all information on the game scenario the user chosed.
+		Game_Server.login(312237563);
 		game = Game_Server.getServer(scenario_num);
 		if(game.isRunning()) game.stopGame();
 		try {
@@ -332,11 +409,9 @@ public class MyGameGUI implements ActionListener, MouseListener {
 		// to the number of robots defined in the game - start the game.
 		if(robotsOnGraph == numRobots) {
 			// Create thread that operate "move" on the game every tenth of a second.
-			GameMoveThread move = new GameMoveThread(this, game);
-			Thread t1 = new Thread(move);
+			Thread t1 = new Thread(new GameMoveThread(this, game));
 			// Create thread that draw the game every tenth of a second.
-			GameDrawThread draw = new GameDrawThread(this, game);
-			Thread t2 = new Thread(draw);
+			Thread t2 = new Thread(new GameDrawThread(this, game));
 			// Start game and threads
 			game.startGame();
 			t1.start();
@@ -435,9 +510,9 @@ public class MyGameGUI implements ActionListener, MouseListener {
 		long miliSecond = 00, second= 00, minute = 00;
 		// Calculate all time variable from t.
 		if(t != -1) {
-			miliSecond = t % 60;
-			second = t / 1000;
-			minute = (t / 60000);
+			miliSecond = t % 1000;
+			second = t / 1000 % 60;
+			minute = (t / 60000 % 60);
 		}
 		// Draw the time.
 		time = String.format("%2d:%02d:%02d", minute, second, miliSecond);
