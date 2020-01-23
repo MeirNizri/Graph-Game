@@ -76,7 +76,7 @@ public class GameMoveThread implements Runnable{
 		// Write the graph and the closing to kml file, and send it back to the GUI.
 		kmlStr += KML_Logger.graphToKML(game.getGraph());
 		kmlStr += KML_Logger.makeTail();
-		game.sendKML(kmlStr);
+		//game.sendKML(kmlStr);
 		GUI.updateKML(kmlStr);
 	}
 }

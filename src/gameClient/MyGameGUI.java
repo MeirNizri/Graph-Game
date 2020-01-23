@@ -354,7 +354,7 @@ public class MyGameGUI implements ActionListener, MouseListener {
 		}
 		
 		// Gets all information on the game scenario the user chosed.
-		Game_Server.login(312237563);
+		// Game_Server.login(312237563);
 		game = Game_Server.getServer(scenario_num);
 		if(game.isRunning()) game.stopGame();
 		try {
