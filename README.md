@@ -40,6 +40,11 @@ To simplify the game we used another two classes representing the following obje
 As mentiond, the game can be saved as a KML file that can be run on Google Earth. There you can see the paths the robots have taken during the game. The location of the path in Google Earth is according to the location of the fruits and the graph, which are in the area of Ariel city.
 <br> 24 KML files are attached to the repositoryת File for every possible scenario in the game. You can enter these files into Google Earth and see the robot's path.
 
+## **Game Data Base**
+Another option in the GUI is to connect to a database and play the game by level. There are 11 defined level out of 24, which you must pass with certain result and with a certain number of moves (see image). Once a stage is passed, the following scenarios can be played. In this mode all the data about the game is saved in the database.
+![Levels](Levels.png)
+<br> You can also access the database and retrieve data about the user or other players. Data such as: number of games played by the user, what the current level reached, what is his highest score at each level, and what is his position relative to all players at each level.
+
 ## **Graph**
 To handle the drawing and all algorithms performed on the graph returned from the game server, we have added two packages that perform these two graphs operations:
 
