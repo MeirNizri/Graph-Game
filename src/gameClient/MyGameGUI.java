@@ -191,16 +191,17 @@ public class MyGameGUI implements ActionListener, MouseListener {
 				// Buile string contain's all users information.
 				info = "Current stage: " + player.getCurrentLevel() +"\n"
 							+ "Number of games: " + player.getNumGames() +"\n";
-				for(int i=0; i<player.getNumGames(); i++) {
+				for(int i=0; i<player.getCurrentLevel(); i++) {
 					info += "Level " + i + ": " + player.getBestScore(i) +"\n";
 				}		
-				// Print to user all the information
-				JOptionPane.showMessageDialog(StdDraw.frame, info, "Information", JOptionPane.PLAIN_MESSAGE);
 			// If catch exception inform user.	
 			} catch (Exception e1){
 				JOptionPane.showMessageDialog(StdDraw.frame, "Error! please try again with valid input", 
 						"Error", JOptionPane.PLAIN_MESSAGE);
+				e1.printStackTrace();
 			}
+			// Print to user all the information
+			JOptionPane.showMessageDialog(StdDraw.frame, info, "Information", JOptionPane.PLAIN_MESSAGE);
 		}
 		
 		// Show to the user his position in the stage he selected.
