@@ -1,6 +1,6 @@
 # Graph-Game
 #### Author: Meir Nizri
-This repository represents a graphical interface of a game. In this game there is a server, to which number of scenario are inserted. The scenarios are listed fron 0 to 23. Each scenario has a graph, time, fruits, and robots. The purpose of the robots is to obtain as much points as possible. points are obtained by collecting fruits.
+This repository represents a graphical interface of a game. In this game there is a server, to which number of scenario are inserted. The scenarios are listed from 0-23. Each scenario has a graph, time, fruits, and robots. The purpose of the robots is to obtain as much points as possible. points are obtained by collecting fruits.
 
 Each fruit has a location and value. After the fruit is collected and the number of points is obtained, the fruit appears elsewhere on the graph. There are two types of fruit:
 <br> Banana - must be collected at the crossing on the edge from the high node to the low node.
